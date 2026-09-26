@@ -160,6 +160,7 @@ button:active,.btn:active,.add:active{transform:translateY(1px)}
 <meta name="twitter:card" content="summary_large_image"><meta name="twitter:title" content="POLIMUNDO MULTIRUBRO | Catálogo online en Corrientes">
 <meta name="twitter:description" content="Explorá el catálogo online de POLIMUNDO MULTIRUBRO. Productos para el hogar, cuidado personal y más. Consultá disponibilidad, retiro o envío por WhatsApp.">
 <script type="application/ld+json" id="seoBusinessSchema">{"@context":"https://schema.org","@type":"Store","name":"POLIMUNDO MULTIRUBRO","url":"https://joclopaiva.github.io/polimundo-catalogo/","telephone":"+54 379 470-5713","address":{"@type":"PostalAddress","addressLocality":"Corrientes","addressRegion":"Corrientes","addressCountry":"AR"},"areaServed":"Argentina"}</script>
+<link rel="sitemap" type="application/xml" title="Sitemap" href="https://joclopaiva.github.io/polimundo-catalogo/sitemap.xml">
 </head><body>
 <a class="skiplink" href="#catalogo">Saltar al catálogo</a><div id="a11yStatus" class="sr-only" aria-live="polite" aria-atomic="true"></div>
 <header class="top"><div class="topin"><img fetchpriority="high" decoding="async" class="brand" role="button" tabindex="0" title="Volver al inicio" aria-label="Volver al inicio de POLIMUNDO" onclick="resetHome()" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();resetHome()}" src="assets/polimundo-4cd4668556.png" alt="Polimundo"><div class="search"><input id="q" placeholder="¿Qué estás buscando?" autocomplete="off" aria-label="Buscar productos"><button class="searchclear" id="searchClear" onclick="clearSearch()" aria-label="Borrar búsqueda" title="Borrar búsqueda">×</button><span aria-hidden="true">⌕</span></div><button class="cartbtn" onclick="openCart()">🛒 <span>Carrito</span> (<b id="cartCount">0</b>)</button></div></header>
@@ -451,7 +452,7 @@ function ensureMobileFilterButton(){
 function openMobileFilters(){ensureMobileFilterButton();document.getElementById('mobileFilterPanel')?.classList.add('open');document.getElementById('filterShade')?.classList.add('open');document.getElementById('mobileFilterPanel')?.setAttribute('aria-hidden','false');lockBodyUX()}
 function closeMobileFilters(){document.getElementById('mobileFilterPanel')?.classList.remove('open');document.getElementById('filterShade')?.classList.remove('open');document.getElementById('mobileFilterPanel')?.setAttribute('aria-hidden','true');unlockBodyUX()}
 function resetAllFilters(){
- const search=document.getElementById('search');if(search)search.value='';
+ const search=document.getElementById('q');if(search)search.value='';
  const cat=document.getElementById('cat');if(cat)cat.value='Todos';
  ['availabilityFilter','sortFilter'].forEach((id,i)=>{const x=document.getElementById(id);if(x)x.selectedIndex=0});
  if(typeof SPECIAL_FILTER!=='undefined')SPECIAL_FILTER='all';
@@ -459,7 +460,7 @@ function resetAllFilters(){
 }
 function renderActiveFiltersUX(){
  const box=document.getElementById('activeFilters');if(!box)return;let arr=[];
- const q=document.getElementById('search')?.value.trim();if(q)arr.push(['Búsqueda: '+q,()=>{document.getElementById('search').value='';render()}]);
+ const q=document.getElementById('q')?.value.trim();if(q)arr.push(['Búsqueda: '+q,()=>{document.getElementById('q').value='';render()}]);
  const c=document.getElementById('cat')?.value;if(c&&c!=='Todos')arr.push([c,()=>{document.getElementById('cat').value='Todos';render()}]);
  const a=document.getElementById('availabilityFilter')?.value;if(a&&a!=='all')arr.push([document.getElementById('availabilityFilter').selectedOptions[0].text,()=>{document.getElementById('availabilityFilter').selectedIndex=0;render()}]);
  if(typeof SPECIAL_FILTER!=='undefined'&&SPECIAL_FILTER!=='all')arr.push([SPECIAL_FILTER,()=>{SPECIAL_FILTER='all';render()}]);
@@ -467,7 +468,7 @@ function renderActiveFiltersUX(){
  box.querySelectorAll('button').forEach(b=>b.onclick=()=>{arr[+b.dataset.i][1]();setTimeout(renderActiveFiltersUX,0)})
 }
 function goHomeUX(){resetAllFilters();window.scrollTo({top:0,behavior:'smooth'})}
-function focusSearchUX(){const x=document.getElementById('search');x?.focus();x?.scrollIntoView({behavior:'smooth',block:'center'})}
+function focusSearchUX(){const x=document.getElementById('q');x?.focus();x?.scrollIntoView({behavior:'smooth',block:'center'})}
 function openCartUX(){const b=[...document.querySelectorAll('button')].find(x=>/carrito/i.test(x.textContent||'')&&x.offsetParent!==null);if(b)b.click()}
 function updateMobileCartCountUX(){let n=0;try{Object.values(cart||{}).forEach(q=>n+=Number(q)||0)}catch(e){}const x=document.getElementById('mobileCartCount');if(x){x.textContent=n;x.style.display=n?'flex':'none'}}
 function imageFallbackUX(){
@@ -623,4 +624,15 @@ const renderV17=window.render;
 if(typeof renderV17==='function')window.render=function(){const r=renderV17.apply(this,arguments);const q=document.getElementById('q')?.value?.trim();if(q&&q.length>=2)clearTimeout(window.__searchTrackTimer),window.__searchTrackTimer=setTimeout(()=>trackPolimundo('search',{search_term:q}),700);return r};
 </script>
 
+<script>
+/* V1.9 · estabilización final */
+(function(){
+window.openCartUX=function(){if(typeof window.openCart==='function')window.openCart()};
+window.focusSearchUX=function(){const q=document.getElementById('q');if(q){q.focus({preventScroll:true});q.scrollIntoView({behavior:'smooth',block:'center'})}};
+function optimizeImages(){document.querySelectorAll('img').forEach(img=>{img.decoding='async';if(!img.closest('.top')&&!img.closest('.hero'))img.loading='lazy';if(!img.hasAttribute('alt'))img.alt=''})}
+document.addEventListener('DOMContentLoaded',()=>{optimizeImages();new MutationObserver(optimizeImages).observe(document.body,{childList:true,subtree:true})});
+document.addEventListener('keydown',e=>{if(e.key!=='Escape')return;const c=document.getElementById('checkoutModal'),p=document.getElementById('productModal'),d=document.getElementById('drawer');if(c?.classList.contains('open'))return window.closeCheckout?.();if(p?.classList.contains('open'))return window.closeProduct?.();if(d?.classList.contains('open'))return window.closeCart?.()});
+document.querySelectorAll('a[target="_blank"]').forEach(a=>a.rel='noopener noreferrer');
+})();
+</script>
 </body></html>
