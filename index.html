@@ -635,4 +635,50 @@ document.addEventListener('keydown',e=>{if(e.key!=='Escape')return;const c=docum
 document.querySelectorAll('a[target="_blank"]').forEach(a=>a.rel='noopener noreferrer');
 })();
 </script>
+
+<script>
+/* V1.9.1 · corrección filtros móviles */
+(function(){
+ function opt(v,t){return `<option value="${esc(v)}">${esc(t)}</option>`}
+ window.ensureMobileFilterButton=function(){
+   const holder=document.getElementById('mobileFilterControls');
+   if(!holder)return;
+   const cats=['Todos',...new Set((window.PRODUCTS||[]).map(p=>p.categoria).filter(Boolean))].sort((a,b)=>a==='Todos'?-1:b==='Todos'?1:String(a).localeCompare(String(b),'es'));
+   holder.innerHTML=`
+    <label><span class="sr-only">Categoría</span><select id="mobileCategory">${cats.map(c=>opt(c,c==='Todos'?'Todas las categorías':c)).join('')}</select></label>
+    <label><span class="sr-only">Tipo</span><select id="mobileSpecial">
+      ${opt('Todos','Todos los productos')}${opt('Destacados','⭐ Destacados')}${opt('Ofertas','🔥 Ofertas')}${opt('Novedades','✨ Novedades')}
+    </select></label>
+    <label><span class="sr-only">Disponibilidad</span><select id="mobileAvailability">
+      ${opt('Todos','Disponibilidad: todos')}${opt('Disponible','Disponibles')}${opt('Consultar','Consultar precio')}
+    </select></label>
+    <label><span class="sr-only">Orden</span><select id="mobileSort">
+      ${opt('relevancia','Ordenar: relevancia')}${opt('precioAsc','Menor precio')}${opt('precioDesc','Mayor precio')}${opt('nombre','Nombre A–Z')}
+    </select></label>`;
+   const mc=document.getElementById('mobileCategory'),ms=document.getElementById('mobileSpecial'),ma=document.getElementById('mobileAvailability'),mo=document.getElementById('mobileSort');
+   mc.value=window.category||'Todos'; ms.value=window.special||'Todos';
+   ma.value=document.getElementById('availability')?.value||'Todos'; mo.value=document.getElementById('sort')?.value||'relevancia';
+   mc.onchange=()=>{category=mc.value;renderCats();render()};
+   ms.onchange=()=>{setSpecial(ms.value)};
+   ma.onchange=()=>{const x=document.getElementById('availability');if(x)x.value=ma.value;render()};
+   mo.onchange=()=>{const x=document.getElementById('sort');if(x)x.value=mo.value;render()};
+ };
+ window.openMobileFilters=function(){
+   ensureMobileFilterButton();
+   document.getElementById('mobileFilterPanel')?.classList.add('open');
+   document.getElementById('filterShade')?.classList.add('open');
+   document.getElementById('mobileFilterPanel')?.setAttribute('aria-hidden','false');
+   if(typeof lockBodyUX==='function')lockBodyUX();
+ };
+ window.resetAllFilters=function(){
+   category='Todos';special='Todos';
+   const q=document.getElementById('q'),a=document.getElementById('availability'),o=document.getElementById('sort');
+   if(q)q.value='';if(a)a.value='Todos';if(o)o.value='relevancia';
+   document.querySelectorAll('.quick').forEach(b=>b.classList.toggle('active',b.dataset.special==='Todos'));
+   const t=document.getElementById('specialtitle');if(t){t.textContent='';t.classList.remove('show')}
+   renderCats();render();ensureMobileFilterButton();
+ };
+})();
+</script>
+
 </body></html>
