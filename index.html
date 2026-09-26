@@ -203,7 +203,7 @@ button:active,.btn:active,.add:active{transform:translateY(1px)}
  .mf-option{min-height:44px!important}
 }
 
-</style><script type="application/ld+json">{"@context":"https://schema.org","@type":"Store","name":"POLIMUNDO MULTIRUBRO","url":"https://joclopaiva.github.io/polimundo-catalogo/","telephone":"+54 379 470-5713","address":{"@type":"PostalAddress","addressLocality":"Corrientes","addressRegion":"Corrientes","addressCountry":"AR"}}</script><link rel="icon" type="image/png" href="assets/polimundo-67c40ee878.png"><link rel="apple-touch-icon" href="assets/polimundo-67c40ee878.png"><!-- V1.5 · SEO y presencia profesional -->
+@media(max-width:760px){.mfd{border:1px solid #cfd8de;border-radius:12px;background:#fff}.mfd summary{list-style:none;min-height:48px;padding:0 14px;display:flex;align-items:center;justify-content:space-between;color:#0b1f33;font-size:14px;font-weight:800;cursor:pointer}.mfd summary::-webkit-details-marker{display:none}.mfd summary:after{content:"⌄";font-size:18px}.mfd[open] summary:after{content:"⌃"}.mfd-list{border-top:1px solid #e4e9ed;padding:6px;max-height:230px;overflow:auto}.mfd-option{display:block;width:100%;min-height:43px;padding:9px 10px;border:0;border-radius:8px;background:#fff;color:#0b1f33;text-align:left;font-size:13px;font-weight:700;cursor:pointer}.mfd-option:hover,.mfd-option:focus,.mfd-option.active{background:#eef3f6}#mobileFilterControls{overflow-y:auto!important;padding-bottom:12px!important}}</style><script type="application/ld+json">{"@context":"https://schema.org","@type":"Store","name":"POLIMUNDO MULTIRUBRO","url":"https://joclopaiva.github.io/polimundo-catalogo/","telephone":"+54 379 470-5713","address":{"@type":"PostalAddress","addressLocality":"Corrientes","addressRegion":"Corrientes","addressCountry":"AR"}}</script><link rel="icon" type="image/png" href="assets/polimundo-67c40ee878.png"><link rel="apple-touch-icon" href="assets/polimundo-67c40ee878.png"><!-- V1.5 · SEO y presencia profesional -->
 <meta name="description" content="Explorá el catálogo online de POLIMUNDO MULTIRUBRO. Productos para el hogar, cuidado personal y más. Consultá disponibilidad, retiro o envío por WhatsApp.">
 <meta name="robots" content="index,follow,max-image-preview:large">
 <link rel="canonical" href="https://joclopaiva.github.io/polimundo-catalogo/">
@@ -696,7 +696,7 @@ document.querySelectorAll('a[target="_blank"]').forEach(a=>a.rel='noopener noref
  window.ensureMobileFilterButton=function(){
    const holder=document.getElementById('mobileFilterControls');
    if(!holder)return;
-   const cats=['Todos',...new Set((window.PRODUCTS||[]).map(p=>p.categoria).filter(Boolean))].sort((a,b)=>a==='Todos'?-1:b==='Todos'?1:String(a).localeCompare(String(b),'es'));
+   const cats=['Todos',...new Set(((typeof PRODUCTS!=='undefined'&&Array.isArray(PRODUCTS))?PRODUCTS:[]).map(p=>p.categoria).filter(Boolean))].sort((a,b)=>a==='Todos'?-1:b==='Todos'?1:String(a).localeCompare(String(b),'es'));
    holder.innerHTML=`
     <label><span class="sr-only">Categoría</span><select id="mobileCategory">${cats.map(c=>opt(c,c==='Todos'?'Todas las categorías':c)).join('')}</select></label>
     <label><span class="sr-only">Tipo</span><select id="mobileSpecial">
@@ -729,7 +729,7 @@ document.querySelectorAll('a[target="_blank"]').forEach(a=>a.rel='noopener noref
    if(q)q.value='';if(a)a.value='Todos';if(o)o.value='relevancia';
    document.querySelectorAll('.quick').forEach(b=>b.classList.toggle('active',b.dataset.special==='Todos'));
    const t=document.getElementById('specialtitle');if(t){t.textContent='';t.classList.remove('show')}
-   renderCats();render();ensureMobileFilterButton();
+   renderCats();render();ensureMobileFilterButton(true);
  };
 })();
 </script>
@@ -813,7 +813,7 @@ document.querySelectorAll('a[target="_blank"]').forEach(a=>a.rel='noopener noref
  window.ensureMobileFilterButton=function(){
   const holder=document.getElementById('mobileFilterControls');if(!holder)return;
   holder.innerHTML='';
-  const cats=['Todos',...new Set((window.PRODUCTS||[]).map(p=>p.categoria).filter(Boolean))].sort((a,b)=>a==='Todos'?-1:b==='Todos'?1:String(a).localeCompare(String(b),'es'));
+  const cats=['Todos',...new Set(((typeof PRODUCTS!=='undefined'&&Array.isArray(PRODUCTS))?PRODUCTS:[]).map(p=>p.categoria).filter(Boolean))].sort((a,b)=>a==='Todos'?-1:b==='Todos'?1:String(a).localeCompare(String(b),'es'));
   holder.append(
    field('category',window.category||'Todos',cats,v=>{category=v;renderCats();render()}),
    field('special',window.special||'Todos',['Todos','Destacados','Ofertas','Novedades'],v=>setSpecial(v)),
@@ -862,4 +862,14 @@ document.querySelectorAll('a[target="_blank"]').forEach(a=>a.rel='noopener noref
 })();
 </script>
 
+<script>
+/* V1.9.5 · filtro móvil reconstruido */
+(function(){
+const names={category:{Todos:'Todas las categorías'},special:{Todos:'Todos los productos',Destacados:'⭐ Destacados',Ofertas:'🔥 Ofertas',Novedades:'✨ Novedades'},availability:{Todos:'Disponibilidad: todos',Disponible:'Disponibles',Consultar:'Consultar precio'},sort:{relevancia:'Ordenar: relevancia',precioAsc:'Menor precio',precioDesc:'Mayor precio',nombre:'Nombre A–Z'}};
+const label=(k,v)=>names[k]?.[v]||v;
+function makeDetails(k,current,values,apply){const d=document.createElement('details');d.className='mfd';const sum=document.createElement('summary');sum.textContent=label(k,current);const list=document.createElement('div');list.className='mfd-list';values.forEach(v=>{const b=document.createElement('button');b.type='button';b.className='mfd-option'+(v===current?' active':'');b.textContent=label(k,v);b.onclick=e=>{e.preventDefault();e.stopPropagation();sum.textContent=label(k,v);list.querySelectorAll('.mfd-option').forEach(x=>x.classList.toggle('active',x===b));d.open=false;apply(v)};list.appendChild(b)});d.append(sum,list);d.addEventListener('toggle',()=>{if(d.open)document.querySelectorAll('.mfd[open]').forEach(x=>{if(x!==d)x.open=false})});return d}
+window.ensureMobileFilterButton=function(force=false){const h=document.getElementById('mobileFilterControls');if(!h)return;if(!force&&h.querySelector('.mfd'))return;h.innerHTML='';const cats=['Todos',...new Set(((typeof PRODUCTS!=='undefined'&&Array.isArray(PRODUCTS))?PRODUCTS:[]).map(p=>p.categoria).filter(Boolean))].sort((a,b)=>a==='Todos'?-1:b==='Todos'?1:String(a).localeCompare(String(b),'es'));h.append(makeDetails('category',window.category||'Todos',cats,v=>{category=v;renderCats();render()}),makeDetails('special',window.special||'Todos',['Todos','Destacados','Ofertas','Novedades'],v=>setSpecial(v)),makeDetails('availability',document.getElementById('availability')?.value||'Todos',['Todos','Disponible','Consultar'],v=>{const e=document.getElementById('availability');if(e)e.value=v;render()}),makeDetails('sort',document.getElementById('sort')?.value||'relevancia',['relevancia','precioAsc','precioDesc','nombre'],v=>{const e=document.getElementById('sort');if(e)e.value=v;render()}))};
+window.openMobileFilters=function(){window.ensureMobileFilterButton();document.getElementById('mobileFilterPanel')?.classList.add('open');document.getElementById('filterShade')?.classList.add('open');document.getElementById('mobileFilterPanel')?.setAttribute('aria-hidden','false');document.body.style.overflow='hidden'};
+})();
+</script>
 </body></html>
