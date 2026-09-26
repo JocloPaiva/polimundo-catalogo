@@ -169,6 +169,40 @@ button:active,.btn:active,.add:active{transform:translateY(1px)}
  #mobileFilterPanel .mobilefilterapply{background:#f36b21!important;color:#fff!important;border:0!important}
 }
 
+
+/* V1.9.3 · filtros móviles sin select nativo */
+@media(max-width:760px){
+ .mf-field{position:relative}
+ .mf-trigger{width:100%;min-height:48px;padding:0 42px 0 14px;border:1px solid #cfd8de;border-radius:12px;background:#fff;color:#0b1f33;font-size:14px;font-weight:800;text-align:left;position:relative;cursor:pointer}
+ .mf-trigger:after{content:"⌄";position:absolute;right:14px;top:50%;transform:translateY(-55%);font-size:18px}
+ .mf-trigger[aria-expanded="true"]{border-color:#0b1f33;box-shadow:0 0 0 2px rgba(11,31,51,.08)}
+ .mf-options{display:none;margin:6px 0 0;padding:6px;background:#fff;border:1px solid #d7dfe4;border-radius:12px;box-shadow:0 10px 26px rgba(0,0,0,.12);max-height:210px;overflow:auto}
+ .mf-options.open{display:block}
+ .mf-option{display:block;width:100%;padding:11px 10px;border:0;border-radius:8px;background:#fff;color:#0b1f33;text-align:left;font-size:13px;font-weight:700;cursor:pointer}
+ .mf-option:hover,.mf-option:focus,.mf-option.active{background:#eef3f6}
+ #mobileFilterControls{overflow-y:auto!important}
+}
+
+
+/* V1.9.4 · menú de opciones por encima del bottom sheet */
+@media(max-width:760px){
+ .mf-options{
+   position:fixed!important;
+   z-index:10050!important;
+   display:none!important;
+   margin:0!important;
+   max-height:min(44vh,320px)!important;
+   overflow-y:auto!important;
+   background:#fff!important;
+   border:1px solid #cfd8de!important;
+   border-radius:12px!important;
+   box-shadow:0 14px 36px rgba(0,0,0,.28)!important;
+   padding:6px!important;
+ }
+ .mf-options.open{display:block!important}
+ .mf-option{min-height:44px!important}
+}
+
 </style><script type="application/ld+json">{"@context":"https://schema.org","@type":"Store","name":"POLIMUNDO MULTIRUBRO","url":"https://joclopaiva.github.io/polimundo-catalogo/","telephone":"+54 379 470-5713","address":{"@type":"PostalAddress","addressLocality":"Corrientes","addressRegion":"Corrientes","addressCountry":"AR"}}</script><link rel="icon" type="image/png" href="assets/polimundo-67c40ee878.png"><link rel="apple-touch-icon" href="assets/polimundo-67c40ee878.png"><!-- V1.5 · SEO y presencia profesional -->
 <meta name="description" content="Explorá el catálogo online de POLIMUNDO MULTIRUBRO. Productos para el hogar, cuidado personal y más. Consultá disponibilidad, retiro o envío por WhatsApp.">
 <meta name="robots" content="index,follow,max-image-preview:large">
@@ -745,6 +779,86 @@ document.querySelectorAll('a[target="_blank"]').forEach(a=>a.rel='noopener noref
    rebuildFilterShell();
    document.getElementById('filterShade')?.addEventListener('click',window.closeMobileFilters);
  });
+})();
+</script>
+
+
+<script>
+/* V1.9.3 · controles móviles robustos */
+(function(){
+ const labels={
+  category:{Todos:'Todas las categorías'},
+  special:{Todos:'Todos los productos',Destacados:'⭐ Destacados',Ofertas:'🔥 Ofertas',Novedades:'✨ Novedades'},
+  availability:{Todos:'Disponibilidad: todos',Disponible:'Disponibles',Consultar:'Consultar precio'},
+  sort:{relevancia:'Ordenar: relevancia',precioAsc:'Menor precio',precioDesc:'Mayor precio',nombre:'Nombre A–Z'}
+ };
+ function field(key,value,items,onPick){
+  const wrap=document.createElement('div');wrap.className='mf-field';
+  const trigger=document.createElement('button');trigger.type='button';trigger.className='mf-trigger';trigger.setAttribute('aria-expanded','false');
+  const list=document.createElement('div');list.className='mf-options';list.setAttribute('role','listbox');
+  function text(v){return labels[key]?.[v]||v}
+  function choose(v){
+   value=v;trigger.textContent=text(v);
+   list.querySelectorAll('.mf-option').forEach(b=>b.classList.toggle('active',b.dataset.value===v));
+   list.classList.remove('open');trigger.setAttribute('aria-expanded','false');onPick(v);
+  }
+  trigger.textContent=text(value);
+  items.forEach(v=>{const b=document.createElement('button');b.type='button';b.className='mf-option'+(v===value?' active':'');b.dataset.value=v;b.textContent=text(v);b.onclick=()=>choose(v);list.appendChild(b)});
+  trigger.onclick=()=>{
+   document.querySelectorAll('.mf-options.open').forEach(x=>{if(x!==list)x.classList.remove('open')});
+   const open=!list.classList.contains('open');list.classList.toggle('open',open);trigger.setAttribute('aria-expanded',String(open));
+  };
+  wrap.append(trigger,list);return wrap;
+ }
+ window.ensureMobileFilterButton=function(){
+  const holder=document.getElementById('mobileFilterControls');if(!holder)return;
+  holder.innerHTML='';
+  const cats=['Todos',...new Set((window.PRODUCTS||[]).map(p=>p.categoria).filter(Boolean))].sort((a,b)=>a==='Todos'?-1:b==='Todos'?1:String(a).localeCompare(String(b),'es'));
+  holder.append(
+   field('category',window.category||'Todos',cats,v=>{category=v;renderCats();render()}),
+   field('special',window.special||'Todos',['Todos','Destacados','Ofertas','Novedades'],v=>setSpecial(v)),
+   field('availability',document.getElementById('availability')?.value||'Todos',['Todos','Disponible','Consultar'],v=>{const e=document.getElementById('availability');if(e)e.value=v;render()}),
+   field('sort',document.getElementById('sort')?.value||'relevancia',['relevancia','precioAsc','precioDesc','nombre'],v=>{const e=document.getElementById('sort');if(e)e.value=v;render()})
+  );
+ };
+ const open=window.openMobileFilters;
+ window.openMobileFilters=function(){
+   window.ensureMobileFilterButton();
+   const panel=document.getElementById('mobileFilterPanel'),shade=document.getElementById('filterShade');
+   panel?.classList.add('open');shade?.classList.add('open');panel?.setAttribute('aria-hidden','false');
+   document.body.style.overflow='hidden';
+ };
+ document.addEventListener('click',e=>{
+  if(!e.target.closest('.mf-field'))document.querySelectorAll('.mf-options.open').forEach(x=>x.classList.remove('open'));
+ });
+})();
+</script>
+
+
+<script>
+/* V1.9.4 · posicionamiento visible de listas móviles */
+(function(){
+ function positionMenu(trigger,list){
+   const r=trigger.getBoundingClientRect();
+   const gap=6, maxH=Math.min(window.innerHeight*.44,320);
+   let top=r.bottom+gap;
+   if(top+maxH>window.innerHeight-10) top=Math.max(10,r.top-gap-maxH);
+   list.style.left=Math.max(10,r.left)+'px';
+   list.style.width=Math.min(r.width,window.innerWidth-20)+'px';
+   list.style.top=top+'px';
+   list.style.bottom='auto';
+ }
+ document.addEventListener('click',function(e){
+   const trigger=e.target.closest('.mf-trigger');
+   if(!trigger)return;
+   const field=trigger.closest('.mf-field'), list=field?.querySelector('.mf-options');
+   if(!list)return;
+   requestAnimationFrame(()=>{
+     if(list.classList.contains('open')) positionMenu(trigger,list);
+   });
+ },true);
+ window.addEventListener('resize',()=>document.querySelectorAll('.mf-options.open').forEach(x=>x.classList.remove('open')));
+ window.addEventListener('scroll',()=>document.querySelectorAll('.mf-options.open').forEach(x=>x.classList.remove('open')),true);
 })();
 </script>
 
