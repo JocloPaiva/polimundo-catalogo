@@ -150,6 +150,25 @@ button:active,.btn:active,.add:active{transform:translateY(1px)}
 .info-commercial .legalnote{font-size:11px;color:var(--muted);margin:12px 0 0;line-height:1.5}
 @media(max-width:700px){.info-commercial-grid{grid-template-columns:1fr}.info-commercial{padding:0 12px}}
 
+
+/* V1.9.2 · Bottom sheet móvil de filtros */
+@media(max-width:760px){
+ #filterShade{position:fixed!important;inset:0!important;background:rgba(3,15,28,.58)!important;z-index:9996!important;opacity:0!important;visibility:hidden!important;transition:.2s ease!important}
+ #filterShade.open{opacity:1!important;visibility:visible!important}
+ #mobileFilterPanel{position:fixed!important;left:0!important;right:0!important;bottom:0!important;top:auto!important;z-index:9997!important;background:#fff!important;border-radius:22px 22px 0 0!important;padding:0!important;max-height:min(82vh,680px)!important;overflow:hidden!important;transform:translateY(105%)!important;transition:transform .24s ease!important;box-shadow:0 -12px 38px rgba(0,0,0,.22)!important}
+ #mobileFilterPanel.open{transform:translateY(0)!important}
+ #mobileFilterPanel .mobilefilterhead{position:sticky!important;top:0!important;display:flex!important;align-items:center!important;justify-content:space-between!important;padding:16px 18px 12px!important;background:#fff!important;border-bottom:1px solid #e7ecef!important;z-index:2!important}
+ #mobileFilterPanel .mobilefilterhead h3{margin:0!important;font-size:17px!important;color:#0b1f33!important}
+ #mobileFilterPanel .mobilefilterclose{width:34px!important;height:34px!important;border:1px solid #d7dee3!important;background:#fff!important;border-radius:9px!important;font-size:20px!important;cursor:pointer!important}
+ #mobileFilterControls{display:grid!important;grid-template-columns:1fr!important;gap:12px!important;padding:16px 18px 8px!important;overflow-y:auto!important;max-height:calc(82vh - 135px)!important}
+ #mobileFilterControls label{display:block!important}
+ #mobileFilterControls select{display:block!important;width:100%!important;min-height:48px!important;padding:0 42px 0 13px!important;border:1px solid #cfd8de!important;border-radius:12px!important;background:#fff!important;color:#0b1f33!important;font-size:14px!important;font-weight:700!important}
+ #mobileFilterPanel .mobilefilteractions{position:sticky!important;bottom:0!important;display:grid!important;grid-template-columns:1fr 1.25fr!important;gap:10px!important;padding:12px 18px calc(12px + env(safe-area-inset-bottom))!important;background:#fff!important;border-top:1px solid #e7ecef!important}
+ #mobileFilterPanel .mobilefilteractions button{min-height:46px!important;border-radius:12px!important;font-weight:900!important;cursor:pointer!important}
+ #mobileFilterPanel .mobilefilterclear{background:#fff!important;color:#0b1f33!important;border:1px solid #cfd8de!important}
+ #mobileFilterPanel .mobilefilterapply{background:#f36b21!important;color:#fff!important;border:0!important}
+}
+
 </style><script type="application/ld+json">{"@context":"https://schema.org","@type":"Store","name":"POLIMUNDO MULTIRUBRO","url":"https://joclopaiva.github.io/polimundo-catalogo/","telephone":"+54 379 470-5713","address":{"@type":"PostalAddress","addressLocality":"Corrientes","addressRegion":"Corrientes","addressCountry":"AR"}}</script><link rel="icon" type="image/png" href="assets/polimundo-67c40ee878.png"><link rel="apple-touch-icon" href="assets/polimundo-67c40ee878.png"><!-- V1.5 · SEO y presencia profesional -->
 <meta name="description" content="Explorá el catálogo online de POLIMUNDO MULTIRUBRO. Productos para el hogar, cuidado personal y más. Consultá disponibilidad, retiro o envío por WhatsApp.">
 <meta name="robots" content="index,follow,max-image-preview:large">
@@ -678,6 +697,54 @@ document.querySelectorAll('a[target="_blank"]').forEach(a=>a.rel='noopener noref
    const t=document.getElementById('specialtitle');if(t){t.textContent='';t.classList.remove('show')}
    renderCats();render();ensureMobileFilterButton();
  };
+})();
+</script>
+
+
+<script>
+/* V1.9.2 · UX final filtros móviles */
+(function(){
+ function rebuildFilterShell(){
+   const panel=document.getElementById('mobileFilterPanel');
+   if(!panel)return;
+   let controls=document.getElementById('mobileFilterControls');
+   if(!controls){controls=document.createElement('div');controls.id='mobileFilterControls'}
+   panel.innerHTML='';
+   const head=document.createElement('div');head.className='mobilefilterhead';
+   head.innerHTML='<h3>Filtros y orden</h3><button type="button" class="mobilefilterclose" aria-label="Cerrar filtros">×</button>';
+   const actions=document.createElement('div');actions.className='mobilefilteractions';
+   actions.innerHTML='<button type="button" class="mobilefilterclear">Limpiar filtros</button><button type="button" class="mobilefilterapply">Ver resultados</button>';
+   panel.append(head,controls,actions);
+   head.querySelector('button').onclick=window.closeMobileFilters;
+   actions.querySelector('.mobilefilterclear').onclick=()=>{window.resetAllFilters?.();window.ensureMobileFilterButton?.()};
+   actions.querySelector('.mobilefilterapply').onclick=()=>{window.closeMobileFilters?.();document.getElementById('catalogo')?.scrollIntoView({behavior:'smooth',block:'start'})};
+ }
+ const oldEnsure=window.ensureMobileFilterButton;
+ window.ensureMobileFilterButton=function(){
+   rebuildFilterShell();
+   if(typeof oldEnsure==='function') oldEnsure();
+   // oldEnsure may replace controls; reattach action shell if needed
+   const panel=document.getElementById('mobileFilterPanel');
+   if(panel && !panel.querySelector('.mobilefilteractions')) rebuildFilterShell();
+ };
+ const oldOpen=window.openMobileFilters;
+ window.openMobileFilters=function(){
+   window.ensureMobileFilterButton();
+   const panel=document.getElementById('mobileFilterPanel'),shade=document.getElementById('filterShade');
+   panel?.classList.add('open');shade?.classList.add('open');panel?.setAttribute('aria-hidden','false');
+   document.body.style.overflow='hidden';
+   setTimeout(()=>panel?.querySelector('select')?.focus(),180);
+ };
+ window.closeMobileFilters=function(){
+   document.getElementById('mobileFilterPanel')?.classList.remove('open');
+   document.getElementById('filterShade')?.classList.remove('open');
+   document.getElementById('mobileFilterPanel')?.setAttribute('aria-hidden','true');
+   document.body.style.overflow='';
+ };
+ document.addEventListener('DOMContentLoaded',()=>{
+   rebuildFilterShell();
+   document.getElementById('filterShade')?.addEventListener('click',window.closeMobileFilters);
+ });
 })();
 </script>
 
