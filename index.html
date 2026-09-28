@@ -673,30 +673,8 @@ window.closeProduct=function(){
  if(typeof closeProductBaseV14==='function')closeProductBaseV14();
  setTimeout(unlockBodyUX,0);
 }
-function sendCheckoutWhatsApp(){
- const name=document.getElementById('customerName').value.trim();
- const err=document.getElementById('checkoutError');if(err){err.classList.remove('show');err.textContent=''}
- if(!name){if(err){err.textContent='Ingresá tu nombre para continuar.';err.classList.add('show')}document.getElementById('customerName').focus();return}
- const delivery=document.getElementById('deliveryType').value;
- const address=document.getElementById('customerAddress').value.trim();
- if(/env/i.test(delivery)&&!address){if(err){err.textContent='Ingresá la dirección o localidad para coordinar el envío.';err.classList.add('show')}document.getElementById('customerAddress').focus();return}
- const phone=document.getElementById('customerPhone').value.trim(),notes=document.getElementById('customerNotes').value.trim();
- let total=0,units=0;
- const lines=['Hola POLIMUNDO 👋','Quisiera solicitar este pedido:',''];
- Object.entries(cart).forEach(([code,qty])=>{
-  const p=PRODUCTS.find(x=>x.codigo===code);if(!p)return;
-  const sub=Number(p.precio||0)*qty;total+=sub;units+=qty;
-  lines.push(`• *${qty}x ${p.producto}*`,`  Código: ${p.codigo}`,`  ${money(p.precio)} c/u — ${money(sub)}`,'');
- });
- lines.push(`📦 *${units} ${units===1?'unidad':'unidades'}*`,`💰 *Total estimado: ${money(total)}*`,'',`👤 Nombre: ${name}`);
- if(phone)lines.push(`📱 Teléfono: ${phone}`);
- lines.push(`🚚 Entrega: ${delivery}`);
- if(address)lines.push(`📍 Dirección/localidad: ${address}`);
- if(notes)lines.push(`📝 Observaciones: ${notes}`);
- lines.push('','Quedo a la espera de la confirmación de disponibilidad, entrega y total final. Gracias.','',`Pedido generado desde el catálogo online de POLIMUNDO.`);
- saveCheckoutDraftV14();
- window.open('https://wa.me/543794705713?text='+encodeURIComponent(lines.join('\n')),'_blank');
-}
+// Checkout V2 usa la función principal definida arriba; se eliminó el override legado que omitía Pedidos_Web.
+
 ['customerName','customerPhone','deliveryType','customerAddress','customerNotes'].forEach(id=>{
  document.getElementById(id)?.addEventListener('change',saveCheckoutDraftV14);
 });
