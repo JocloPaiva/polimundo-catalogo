@@ -501,7 +501,14 @@ function goSpecial(s){
 function cartTotals(){let units=0,total=0;Object.entries(cart).forEach(([code,qty])=>{const p=PRODUCTS.find(x=>x.codigo===code);if(!p)return;units+=qty;total+=Number(p.precio||0)*qty});return{units,total}}
 function openCheckout(){const entries=Object.entries(cart).filter(([code,qty])=>qty>0&&PRODUCTS.some(p=>p.codigo===code));if(!entries.length)return;const t=cartTotals();document.getElementById('checkoutSummary').innerHTML=`<b>${t.units} ${t.units===1?'unidad':'unidades'}</b><br>Total estimado: <b>${money(t.total)}</b>`;checkoutSummaryUX();updateDeliveryFields();document.getElementById('checkoutModal').classList.add('open');lockBodyUX();document.getElementById('checkoutModal').setAttribute('aria-hidden','false')}
 function closeCheckout(){const m=document.getElementById('checkoutModal');m.classList.remove('open');m.setAttribute('aria-hidden','true')}
-function sendCheckoutWhatsApp(){
+async function registrarPedidoWebV1(payload){
+ try{
+  const res=await fetch(API_URL,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify(payload)});
+  const data=await res.json();
+  return !!(data&&data.ok);
+ }catch(e){console.error('No se pudo registrar el pedido web:',e);return false}
+}
+async function sendCheckoutWhatsApp(){
  const name=document.getElementById('customerName').value.trim(),uxerr=document.getElementById('checkoutError');
  if(uxerr){uxerr.classList.remove('show');uxerr.textContent=''}
  if(!name){if(uxerr){uxerr.textContent='Ingresá tu nombre para continuar.';uxerr.classList.add('show')}document.getElementById('customerName').focus();return}
@@ -510,19 +517,23 @@ function sendCheckoutWhatsApp(){
  const valid=Object.entries(cart).filter(([code,qty])=>qty>0&&PRODUCTS.some(p=>p.codigo===code&&!String(p.disponibilidad||'').toLowerCase().includes('sin stock')&&Number(p.precio)>0));
  if(!valid.length){if(uxerr){uxerr.textContent='Tu carrito no tiene productos disponibles para enviar.';uxerr.classList.add('show')}renderCart();return}
  const phone=document.getElementById('customerPhone').value.trim(),address=addressEl?.value.trim()||'',notes=document.getElementById('customerNotes').value.trim();
- const orderId='WEB-'+new Date().toISOString().replace(/\D/g,'').slice(0,14);
+ const orderId='WEB-'+new Date().toISOString().replace(/\D/g,'').slice(0,14)+'-'+Math.random().toString(36).slice(2,6).toUpperCase();
+ const items=valid.map(([code,qty])=>{const p=PRODUCTS.find(x=>x.codigo===code);return{codigo:p.codigo,producto:p.producto,cantidad:qty,precio:Number(p.precio)}});
+ const total=items.reduce((s,x)=>s+x.precio*x.cantidad,0),units=items.reduce((s,x)=>s+x.cantidad,0);
+ const payload={id:orderId,cliente:name,telefono:phone,entrega:delivery,direccion:address,observacion:notes,items};
  const lines=['🛒 *PEDIDO WEB — POLIMUNDO MULTIRUBRO*',`N°: *${orderId}*`,''];
- let total=0,units=0;
- valid.forEach(([code,qty])=>{const p=PRODUCTS.find(x=>x.codigo===code);const sub=Number(p.precio)*qty;total+=sub;units+=qty;lines.push(`• *${qty}x ${p.producto}*`,`  Código: ${p.codigo}`,`  ${money(p.precio)} c/u — Subtotal: ${money(sub)}`,'')});
+ items.forEach(x=>lines.push(`• *${x.cantidad}x ${x.producto}*`,`  Código: ${x.codigo}`,`  ${money(x.precio)} c/u — Subtotal: ${money(x.precio*x.cantidad)}`,''));
  lines.push(`📦 *${units} unidad${units===1?'':'es'}*`,`💰 *TOTAL ESTIMADO: ${money(total)}*`,'',`👤 Nombre: ${name}`);
- if(phone)lines.push(`📱 Teléfono: ${phone}`);
- lines.push(`🚚 Entrega: ${delivery}`);
- if(address)lines.push(`📍 Dirección/localidad: ${address}`);
- if(notes)lines.push(`📝 Observaciones: ${notes}`);
+ if(phone)lines.push(`📱 Teléfono: ${phone}`);lines.push(`🚚 Entrega: ${delivery}`);if(address)lines.push(`📍 Dirección/localidad: ${address}`);if(notes)lines.push(`📝 Observaciones: ${notes}`);
  lines.push('','Quisiera confirmar disponibilidad, precio final y coordinar el pedido.','Pedido generado desde el catálogo online de POLIMUNDO.');
  saveCheckoutDraftV14();
- try{localStorage.setItem('polimundoLastOrder',JSON.stringify({id:orderId,createdAt:new Date().toISOString(),name,phone,delivery,address,notes,total,units,items:valid}))}catch(e){}
- window.open('https://wa.me/543794705713?text='+encodeURIComponent(lines.join('\n')),'_blank');
+ try{localStorage.setItem('polimundoLastOrder',JSON.stringify({...payload,createdAt:new Date().toISOString(),total,units}))}catch(e){}
+ const wa='https://wa.me/543794705713?text='+encodeURIComponent(lines.join('\n'));
+ const waWindow=window.open('about:blank','_blank');
+ const registrado=await registrarPedidoWebV1(payload);
+ try{localStorage.setItem('polimundoLastOrderRegistered',registrado?'Sí':'No')}catch(e){}
+ if(!registrado)console.warn('El pedido seguirá por WhatsApp aunque el registro web no haya respondido.');
+ if(waWindow)waWindow.location.href=wa;else window.location.href=wa;
 }
 function fillExtendedProductData(p){const desc=document.getElementById('pdDesc'),specs=document.getElementById('pdSpecs'),description=String(p.descripcion||p.description||'').trim();desc.textContent=description;desc.classList.toggle('show',!!description);let data=p.especificaciones||p.specs||p.caracteristicas||null,rows=[];if(data&&typeof data==='object'&&!Array.isArray(data))rows=Object.entries(data);else if(typeof data==='string'&&data.trim())rows=data.split('|').map(x=>x.split(':')).filter(x=>x.length>1).map(x=>[x.shift().trim(),x.join(':').trim()]);specs.innerHTML=rows.map(([k,v])=>`<div><b>${esc(k)}</b><span>${esc(v)}</span></div>`).join('');specs.classList.toggle('show',rows.length>0)}
 
