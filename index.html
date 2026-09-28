@@ -501,12 +501,17 @@ function goSpecial(s){
 function cartTotals(){let units=0,total=0;Object.entries(cart).forEach(([code,qty])=>{const p=PRODUCTS.find(x=>x.codigo===code);if(!p)return;units+=qty;total+=Number(p.precio||0)*qty});return{units,total}}
 function openCheckout(){const entries=Object.entries(cart).filter(([code,qty])=>qty>0&&PRODUCTS.some(p=>p.codigo===code));if(!entries.length)return;const t=cartTotals();document.getElementById('checkoutSummary').innerHTML=`<b>${t.units} ${t.units===1?'unidad':'unidades'}</b><br>Total estimado: <b>${money(t.total)}</b>`;checkoutSummaryUX();updateDeliveryFields();document.getElementById('checkoutModal').classList.add('open');lockBodyUX();document.getElementById('checkoutModal').setAttribute('aria-hidden','false')}
 function closeCheckout(){const m=document.getElementById('checkoutModal');m.classList.remove('open');m.setAttribute('aria-hidden','true')}
-async function registrarPedidoWebV1(payload){
+function registrarPedidoWebV1(payload){
  try{
-  const res=await fetch(API_URL,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify(payload)});
-  const data=await res.json();
-  return !!(data&&data.ok);
- }catch(e){console.error('No se pudo registrar el pedido web:',e);return false}
+  fetch(API_URL,{
+   method:'POST',
+   mode:'no-cors',
+   headers:{'Content-Type':'text/plain;charset=utf-8'},
+   body:JSON.stringify(payload),
+   keepalive:true
+  }).catch(e=>console.error('No se pudo registrar el pedido web:',e));
+  return true;
+ }catch(e){console.error('No se pudo iniciar el registro del pedido web:',e);return false}
 }
 async function sendCheckoutWhatsApp(){
  const name=document.getElementById('customerName').value.trim(),uxerr=document.getElementById('checkoutError');
@@ -530,7 +535,7 @@ async function sendCheckoutWhatsApp(){
  try{localStorage.setItem('polimundoLastOrder',JSON.stringify({...payload,createdAt:new Date().toISOString(),total,units}))}catch(e){}
  const wa='https://wa.me/543794705713?text='+encodeURIComponent(lines.join('\n'));
  const waWindow=window.open('about:blank','_blank');
- const registrado=await registrarPedidoWebV1(payload);
+ const registrado=registrarPedidoWebV1(payload);
  try{localStorage.setItem('polimundoLastOrderRegistered',registrado?'Sí':'No')}catch(e){}
  if(!registrado)console.warn('El pedido seguirá por WhatsApp aunque el registro web no haya respondido.');
  if(waWindow)waWindow.location.href=wa;else window.location.href=wa;
