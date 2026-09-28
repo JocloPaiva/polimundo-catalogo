@@ -334,6 +334,33 @@ function renderRelated(p){
     return `<button class="relatedcard" onclick='openProduct(${JSON.stringify(x.codigo)},true)'><img loading="lazy" src="${esc(x.imagen)}" alt="${esc(x.producto)}" onerror="this.style.display='none'"><div class="relatedbody"><div class="relatedname">${esc(x.producto)}</div><div class="relatedprice">${consultar?'Consultar precio':money(x.precio)}</div></div></button>`;
   }).join('');
 }
+function updateProductSEOv2(p){
+  if(!p)return;
+  const url=productUrl(p.codigo);
+  const price=Number(p.precio)||0;
+  const desc=String(p.descripcion||('Comprá '+p.producto+' en POLIMUNDO MULTIRUBRO. Consultá disponibilidad, retiro o envío en Corrientes.')).trim();
+  document.title=p.producto+' | POLIMUNDO MULTIRUBRO';
+  const setMeta=(selector,content)=>{const el=document.querySelector(selector);if(el)el.setAttribute('content',content)};
+  setMeta('meta[name="description"]',desc.slice(0,160));
+  setMeta('meta[property="og:title"]',p.producto+' | POLIMUNDO MULTIRUBRO');
+  setMeta('meta[property="og:description"]',desc.slice(0,200));
+  setMeta('meta[property="og:url"]',url);
+  setMeta('meta[property="og:type"]','product');
+  setMeta('meta[name="twitter:title"]',p.producto+' | POLIMUNDO MULTIRUBRO');
+  setMeta('meta[name="twitter:description"]',desc.slice(0,200));
+  if(p.imagen){setMeta('meta[property="og:image"]',p.imagen);setMeta('meta[name="twitter:image"]',p.imagen)}
+  let schema=document.getElementById('seoProductSchema');
+  if(!schema){schema=document.createElement('script');schema.type='application/ld+json';schema.id='seoProductSchema';document.head.appendChild(schema)}
+  const data={'@context':'https://schema.org','@type':'Product',name:p.producto,sku:p.codigo,category:p.categoria||'',description:desc,image:[p.imagen,p.imagen_2,p.imagen_3,p.imagen_4].filter(Boolean),brand:{'@type':'Brand',name:'POLIMUNDO MULTIRUBRO'}};
+  if(price>0)data.offers={'@type':'Offer',priceCurrency:'ARS',price:String(price),url:url,availability:String(p.disponibilidad||'').toLowerCase().includes('sin stock')?'https://schema.org/OutOfStock':'https://schema.org/InStock'};
+  schema.textContent=JSON.stringify(data);
+  const canonical=document.querySelector('link[rel="canonical"]');if(canonical)canonical.href=url;
+}
+function resetCatalogSEOv2(){
+  document.title='POLIMUNDO MULTIRUBRO | Catálogo online en Corrientes';
+  const canonical=document.querySelector('link[rel="canonical"]');if(canonical)canonical.href='https://joclopaiva.github.io/polimundo-catalogo/';
+  const schema=document.getElementById('seoProductSchema');if(schema)schema.remove();
+}
 function openProduct(code,pushUrl=true){
   const p=PRODUCTS.find(x=>x.codigo===code); if(!p)return;
   detailCode=code; detailQty=1;
@@ -363,10 +390,12 @@ function openProduct(code,pushUrl=true){
   document.getElementById('productModal').setAttribute('aria-hidden','false');
   document.body.style.overflow='hidden';
   if(pushUrl){updateProductUrl(code);detailHistoryPushed=true}
+  updateProductSEOv2(p);
 }
 function closeProduct(fromHistory=false){
   const m=document.getElementById('productModal');m.classList.remove('open');m.setAttribute('aria-hidden','true');setTimeout(unlockBodyUX,0);document.body.style.overflow='';detailCode=null;
   if(!fromHistory&&new URL(window.location.href).searchParams.has('producto')){clearProductUrl();detailHistoryPushed=false}
+  resetCatalogSEOv2();
 }
 function navigateProduct(step){
   const i=PRODUCTS.findIndex(x=>x.codigo===detailCode),p=PRODUCTS[i+step];if(!p)return;
