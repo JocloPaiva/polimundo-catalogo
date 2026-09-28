@@ -314,7 +314,7 @@ function openCart(){document.getElementById('drawer').classList.add('open');rend
 function sendWA(){let mode=document.querySelector('input[name=mode]:checked').value;let entries=Object.entries(cart);if(!entries.length)return;let total=0;let units=0;let lines=['🛒 *PEDIDO — POLIMUNDO MULTIRUBRO*',''];for(let [code,q] of entries){let p=PRODUCTS.find(x=>x.codigo===code);if(!p)continue;let sub=p.precio*q;total+=sub;units+=q;lines.push(`• *${q}x ${p.producto}*`,`  Código: ${code}`,`  ${money(p.precio)} c/u — Subtotal: ${money(sub)}`,'')}lines.push(`📦 Productos: *${units} unidad${units===1?'':'es'}*`,`💰 *TOTAL: ${money(total)}*`,`🚚 Modalidad: *${mode}*`,'','Hola, quisiera confirmar disponibilidad y coordinar mi pedido.','',`Pedido generado desde el catálogo online de Polimundo.`);window.open('https://wa.me/543794705713?text='+encodeURIComponent(lines.join('\n')),'_blank')}
 
 let detailCode=null,detailQty=1,detailHistoryPushed=false;
-function productUrl(code){const u=new URL(window.location.href);u.searchParams.set('producto',code);return u.toString()}
+function productUrl(code){const u=new URL(window.location.href);u.search='';u.hash='';u.searchParams.set('producto',code);return u.toString()}
 function updateProductUrl(code,replace=false){
   const u=new URL(window.location.href);u.searchParams.set('producto',code);
   const state={...(history.state||{}),polimundoProduct:code};
@@ -501,7 +501,29 @@ function goSpecial(s){
 function cartTotals(){let units=0,total=0;Object.entries(cart).forEach(([code,qty])=>{const p=PRODUCTS.find(x=>x.codigo===code);if(!p)return;units+=qty;total+=Number(p.precio||0)*qty});return{units,total}}
 function openCheckout(){const entries=Object.entries(cart).filter(([code,qty])=>qty>0&&PRODUCTS.some(p=>p.codigo===code));if(!entries.length)return;const t=cartTotals();document.getElementById('checkoutSummary').innerHTML=`<b>${t.units} ${t.units===1?'unidad':'unidades'}</b><br>Total estimado: <b>${money(t.total)}</b>`;checkoutSummaryUX();updateDeliveryFields();document.getElementById('checkoutModal').classList.add('open');lockBodyUX();document.getElementById('checkoutModal').setAttribute('aria-hidden','false')}
 function closeCheckout(){const m=document.getElementById('checkoutModal');m.classList.remove('open');m.setAttribute('aria-hidden','true')}
-function sendCheckoutWhatsApp(){const name=document.getElementById('customerName').value.trim();const uxerr=document.getElementById('checkoutError');if(uxerr){uxerr.classList.remove('show');uxerr.textContent=''}if(!name){if(uxerr){uxerr.textContent='Ingresá tu nombre para continuar.';uxerr.classList.add('show')}document.getElementById('customerName').focus();return}const uxDelivery=document.getElementById('deliveryType')?.value||'';const uxAddress=document.getElementById('customerAddress');if(/env/i.test(uxDelivery)&&uxAddress&&!uxAddress.value.trim()){if(uxerr){uxerr.textContent='Ingresá la dirección o localidad para coordinar el envío.';uxerr.classList.add('show')}uxAddress.focus();return}const phone=document.getElementById('customerPhone').value.trim(),delivery=document.getElementById('deliveryType').value,address=document.getElementById('customerAddress').value.trim(),notes=document.getElementById('customerNotes').value.trim(),lines=['Hola POLIMUNDO 👋','Quiero realizar este pedido:',''];let total=0;Object.entries(cart).forEach(([code,qty])=>{const p=PRODUCTS.find(x=>x.codigo===code);if(!p)return;const sub=Number(p.precio||0)*qty;total+=sub;lines.push(`• ${p.producto} (${p.codigo})`);lines.push(`  ${qty} x ${money(p.precio)} = ${money(sub)}`)});lines.push('',`TOTAL ESTIMADO: ${money(total)}`,'',`Nombre: ${name}`);if(phone)lines.push(`Teléfono: ${phone}`);lines.push(`Entrega: ${delivery}`);if(address)lines.push(`Dirección/localidad: ${address}`);if(notes)lines.push(`Observaciones: ${notes}`);lines.push('','Quedo a la espera de la confirmación. Gracias.');window.open('https://wa.me/543794705713?text='+encodeURIComponent(lines.join('\\n')),'_blank')}
+function sendCheckoutWhatsApp(){
+ const name=document.getElementById('customerName').value.trim(),uxerr=document.getElementById('checkoutError');
+ if(uxerr){uxerr.classList.remove('show');uxerr.textContent=''}
+ if(!name){if(uxerr){uxerr.textContent='Ingresá tu nombre para continuar.';uxerr.classList.add('show')}document.getElementById('customerName').focus();return}
+ const delivery=document.getElementById('deliveryType')?.value||'',addressEl=document.getElementById('customerAddress');
+ if(/env/i.test(delivery)&&addressEl&&!addressEl.value.trim()){if(uxerr){uxerr.textContent='Ingresá la dirección o localidad para coordinar el envío.';uxerr.classList.add('show')}addressEl.focus();return}
+ const valid=Object.entries(cart).filter(([code,qty])=>qty>0&&PRODUCTS.some(p=>p.codigo===code&&!String(p.disponibilidad||'').toLowerCase().includes('sin stock')&&Number(p.precio)>0));
+ if(!valid.length){if(uxerr){uxerr.textContent='Tu carrito no tiene productos disponibles para enviar.';uxerr.classList.add('show')}renderCart();return}
+ const phone=document.getElementById('customerPhone').value.trim(),address=addressEl?.value.trim()||'',notes=document.getElementById('customerNotes').value.trim();
+ const orderId='WEB-'+new Date().toISOString().replace(/\D/g,'').slice(0,14);
+ const lines=['🛒 *PEDIDO WEB — POLIMUNDO MULTIRUBRO*',`N°: *${orderId}*`,''];
+ let total=0,units=0;
+ valid.forEach(([code,qty])=>{const p=PRODUCTS.find(x=>x.codigo===code);const sub=Number(p.precio)*qty;total+=sub;units+=qty;lines.push(`• *${qty}x ${p.producto}*`,`  Código: ${p.codigo}`,`  ${money(p.precio)} c/u — Subtotal: ${money(sub)}`,'')});
+ lines.push(`📦 *${units} unidad${units===1?'':'es'}*`,`💰 *TOTAL ESTIMADO: ${money(total)}*`,'',`👤 Nombre: ${name}`);
+ if(phone)lines.push(`📱 Teléfono: ${phone}`);
+ lines.push(`🚚 Entrega: ${delivery}`);
+ if(address)lines.push(`📍 Dirección/localidad: ${address}`);
+ if(notes)lines.push(`📝 Observaciones: ${notes}`);
+ lines.push('','Quisiera confirmar disponibilidad, precio final y coordinar el pedido.','Pedido generado desde el catálogo online de POLIMUNDO.');
+ saveCheckoutDraftV14();
+ try{localStorage.setItem('polimundoLastOrder',JSON.stringify({id:orderId,createdAt:new Date().toISOString(),name,phone,delivery,address,notes,total,units,items:valid}))}catch(e){}
+ window.open('https://wa.me/543794705713?text='+encodeURIComponent(lines.join('\n')),'_blank');
+}
 function fillExtendedProductData(p){const desc=document.getElementById('pdDesc'),specs=document.getElementById('pdSpecs'),description=String(p.descripcion||p.description||'').trim();desc.textContent=description;desc.classList.toggle('show',!!description);let data=p.especificaciones||p.specs||p.caracteristicas||null,rows=[];if(data&&typeof data==='object'&&!Array.isArray(data))rows=Object.entries(data);else if(typeof data==='string'&&data.trim())rows=data.split('|').map(x=>x.split(':')).filter(x=>x.length>1).map(x=>[x.shift().trim(),x.join(':').trim()]);specs.innerHTML=rows.map(([k,v])=>`<div><b>${esc(k)}</b><span>${esc(v)}</span></div>`).join('');specs.classList.toggle('show',rows.length>0)}
 
 loadProducts();
