@@ -986,12 +986,13 @@ window.openMobileFilters=function(){window.ensureMobileFilterButton();document.g
    if(typeof base!=='function')return;
    const all=PRODUCTS||[], pool=commercialPool();
    const flagged={d:all.filter(p=>p.destacado&&eligible(p)),o:all.filter(p=>p.oferta&&eligible(p)),n:all.filter(p=>p.novedad&&eligible(p))};
+   const explicitSets={featured:new Set(flagged.d.map(p=>p.codigo)),offer:new Set(flagged.o.map(p=>p.codigo)),new:new Set(flagged.n.map(p=>p.codigo))};
    /* Las banderas explícitas siguen siendo la única fuente de las etiquetas comerciales.
       Los rellenos sólo evitan secciones vacías y nunca reciben una etiqueta falsa. */
    const originalCard=window.homeProductCard;
    if(typeof originalCard==='function'){
     window.homeProductCard=function(p,type){
-      const explicit=type==='featured'?!!p.destacado:type==='offer'?!!p.oferta:type==='new'?!!p.novedad:true;
+      const explicit=explicitSets[type]?explicitSets[type].has(p.codigo):true;
       if(explicit)return originalCard(p,type);
       let html=originalCard(p,type);
       return html.replace(/<span class="hometag [^"]+">[^<]*<\/span>/,'');
