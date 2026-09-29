@@ -949,14 +949,21 @@ window.openMobileFilters=function(){window.ensureMobileFilterButton();document.g
  }
  const baseRender=window.render;
  window.render=function(){
-   const q=document.getElementById('q')?.value.trim().toLowerCase()||'';
+   const qEl=document.getElementById('q'), q=qEl?.value.trim().toLowerCase()||'';
    if(typeof baseRender!=='function')return;
    if(priceBand==='all'&&!q){const r=baseRender.apply(this,arguments);setTimeout(enhanceCards,0);return r}
-   const original=PRODUCTS;
+   const original=PRODUCTS, originalQuery=qEl?.value||'';
    try{
      PRODUCTS=original.filter(p=>priceOK(p)&&(!q||searchable(p).includes(q)));
-     const r=baseRender.apply(this,arguments);setTimeout(enhanceCards,0);return r;
-   }finally{PRODUCTS=original}
+     /* La búsqueda enriquecida ya se resolvió arriba; evitamos que el render base
+        vuelva a descartar coincidencias encontradas sólo en descripción/características. */
+     if(qEl&&q) qEl.value='';
+     const r=baseRender.apply(this,arguments);
+     setTimeout(enhanceCards,0);return r;
+   }finally{
+     PRODUCTS=original;
+     if(qEl) qEl.value=originalQuery;
+   }
  };
  document.getElementById('v2PriceBar')?.addEventListener('click',e=>{const b=e.target.closest('[data-v2price]');if(!b)return;priceBand=b.dataset.v2price;document.querySelectorAll('[data-v2price]').forEach(x=>x.classList.toggle('active',x===b));window.render()});
  const baseOpen=window.openProduct;
@@ -967,4 +974,35 @@ window.openMobileFilters=function(){window.ensureMobileFilterButton();document.g
  window.openCheckout=function(){const r=baseCheckout?.apply(this,arguments);const s=document.getElementById('checkoutSummary');if(s&&!document.getElementById('v2CheckoutBadges')){const d=document.createElement('div');d.id='v2CheckoutBadges';d.className='v2-checkout-badges';d.innerHTML='<span>✓ Sin pago online</span><span>✓ Confirmación por WhatsApp</span><span>✓ Retiro o envío</span>';s.insertAdjacentElement('afterend',d)}return r};
  document.addEventListener('DOMContentLoaded',()=>{renderRecent();setTimeout(enhanceCards,800)});
 })();
-</script></body></html>
+</script>
+<script id="catalogV3Script">
+/* POLIMUNDO CATALOGO V3 · CMS comercial inteligente 2026-09 */
+(function(){
+ function eligible(p){const a=String(p.disponibilidad||'').toLowerCase();return p&&p.imagen&&p.producto&&!a.includes('sin stock')}
+ function uniqueFill(primary,pool,limit){const out=[],seen=new Set();[...primary,...pool].forEach(p=>{if(p&&eligible(p)&&!seen.has(p.codigo)&&out.length<limit){seen.add(p.codigo);out.push(p)}});return out}
+ function commercialPool(){return (PRODUCTS||[]).filter(eligible).sort((a,b)=>Number(b.precio||0)-Number(a.precio||0))}
+ const base=window.renderStorefront;
+ window.renderStorefront=function(){
+   if(typeof base!=='function')return;
+   const all=PRODUCTS||[], pool=commercialPool();
+   const flagged={d:all.filter(p=>p.destacado&&eligible(p)),o:all.filter(p=>p.oferta&&eligible(p)),n:all.filter(p=>p.novedad&&eligible(p))};
+   /* Las banderas explícitas siguen siendo la única fuente de las etiquetas comerciales.
+      Los rellenos sólo evitan secciones vacías y nunca reciben una etiqueta falsa. */
+   const originalCard=window.homeProductCard;
+   if(typeof originalCard==='function'){
+    window.homeProductCard=function(p,type){
+      const explicit=type==='featured'?!!p.destacado:type==='offer'?!!p.oferta:type==='new'?!!p.novedad:true;
+      if(explicit)return originalCard(p,type);
+      let html=originalCard(p,type);
+      return html.replace(/<span class="hometag [^"]+">[^<]*<\/span>/,'');
+    };
+   }
+   const od=all.map(p=>p.destacado),oo=all.map(p=>p.oferta),on=all.map(p=>p.novedad);
+   const fd=uniqueFill(flagged.d,pool,4), fo=uniqueFill(flagged.o,pool.filter(p=>!fd.includes(p)),4), fn=uniqueFill(flagged.n,pool.filter(p=>!fd.includes(p)&&!fo.includes(p)),4);
+   all.forEach(p=>{p.destacado=fd.includes(p);p.oferta=fo.includes(p);p.novedad=fn.includes(p)});
+   try{return base.apply(this,arguments)}finally{all.forEach((p,i)=>{p.destacado=od[i];p.oferta=oo[i];p.novedad=on[i]});if(typeof originalCard==='function')window.homeProductCard=originalCard}
+ };
+ document.addEventListener('DOMContentLoaded',()=>setTimeout(()=>window.renderStorefront?.(),900));
+})();
+</script>
+</body></html>
